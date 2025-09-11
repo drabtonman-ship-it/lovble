@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/sonner';
-import { Search, Calendar, User, DollarSign, X } from 'lucide-react';
+import { Search, Calendar, User, DollarSign, X, Send, Calculator, Plus as PlusIcon, Trash2 } from 'lucide-react';
 import { loadBillboards } from '@/services/billboardService';
 import type { Billboard } from '@/types';
 import { createContract } from '@/services/contractService';
