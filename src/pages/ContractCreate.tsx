@@ -228,7 +228,7 @@ export default function ContractCreate() {
     <div className="container mx-auto px-4 py-6 space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">إنشاء عقد جديد {nextContractNumber && `#${nextContractNumber}`}</h1>
+          <h1 className="text-3xl font-bold text-foreground">إنشاء عقد جدي�� {nextContractNumber && `#${nextContractNumber}`}</h1>
           <p className="text-muted-foreground">إنشاء عقد إيجار جديد مع تحديد اللوحات والشروط</p>
         </div>
         <div className="flex gap-2">
@@ -495,6 +495,97 @@ export default function ContractCreate() {
                 <label className="text-sm">تاريخ النهاية</label>
                 <Input type="date" value={endDate} readOnly disabled />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* installments */}
+          <Card className="bg-gradient-card border-0 shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-primary" />
+                الدفعات
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input type="number" min={1} max={6} placeholder="عدد الدفعات (1-6)" onChange={(e)=>distributeEvenly(parseInt(e.target.value||'1'))} />
+                <Button type="button" variant="outline" onClick={()=>distributeEvenly(3)} className="gap-2"><Calculator className="h-4 w-4"/>تقسيم تلقائي</Button>
+                <Button type="button" variant="outline" onClick={()=>setInstallments([...installments, { amount: 0, months: 1 }])} className="gap-2"><PlusIcon className="h-4 w-4"/>إضافة</Button>
+              </div>
+              <div className="space-y-2">
+                {installments.map((inst, idx)=> (
+                  <div key={idx} className="grid grid-cols-5 gap-2 items-center">
+                    <div className="col-span-2">
+                      <label className="text-xs text-muted-foreground">المبلغ</label>
+                      <Input type="number" value={inst.amount} onChange={(e)=>{
+                        const v = Number(e.target.value||0);
+                        setInstallments(list=> list.map((it,i)=> i===idx?{...it, amount: v}: it));
+                      }} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">الأشهر</label>
+                      <Select value={String(inst.months)} onValueChange={(v)=> setInstallments(list=> list.map((it,i)=> i===idx?{...it, months: parseInt(v)}: it))}>
+                        <SelectTrigger><SelectValue placeholder="الأشهر" /></SelectTrigger>
+                        <SelectContent>
+                          {[1,2,3,6,12].map(m=> (<SelectItem key={m} value={String(m)}>{m}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">تاريخ الاستحقاق</label>
+                      <Input value={dueDateFor(idx)} readOnly />
+                    </div>
+                    <div className="flex items-end">
+                      <Button type="button" variant="destructive" onClick={()=> setInstallments(list=> list.filter((_,i)=> i!==idx))}><Trash2 className="h-4 w-4"/></Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-sm text-muted-foreground">الإجمالي: {finalTotal.toLocaleString('ar-LY')} د.ل</div>
+            </CardContent>
+          </Card>
+
+          {/* settlement and sharing */}
+          <Card className="bg-gradient-card border-0 shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                التسوية والإرسال
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={()=>setShowSettlement(s=>!s)}>تسوية العقد</Button>
+                <Button type="button" variant="outline" className="gap-2" onClick={()=>{
+                  const text = `عقد جديد\nالزبون: ${customerName}\nمن ${startDate} إلى ${endDate}\nالإجمالي: ${finalTotal.toLocaleString('ar-LY')} د.ل\nاللوحات: ${selected.length}\nالدفعات: ${installments.map((i,idx)=>`#${idx+1}:${i.amount}د.ل بعد ${i.months}ش`).join(' | ')}`;
+                  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                  window.open(url, '_blank');
+                }}>
+                  <Send className="h-4 w-4"/> إرسال عبر الواتساب
+                </Button>
+              </div>
+              {showSettlement && (
+                <div className="space-y-2 text-sm">
+                  {(() => {
+                    const s = startDate ? new Date(startDate) : null;
+                    const e = endDate ? new Date(endDate) : null;
+                    if (!s || !e || isNaN(s.getTime()) || isNaN(e.getTime())) return <div className="text-muted-foreground">يرجى تحديد تاريخ البداية والنهاية</div>;
+                    const today = new Date();
+                    const end = e < today ? e : today;
+                    const totalDays = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000));
+                    const consumedDays = Math.max(0, Math.min(totalDays, Math.ceil((end.getTime() - s.getTime()) / 86400000)));
+                    const ratio = consumedDays / totalDays;
+                    const currentDue = Math.round(finalTotal * ratio);
+                    return (
+                      <div className="space-y-1">
+                        <div>تاريخ انتهاء العقد: <span className="font-medium">{endDate}</span></div>
+                        <div>الأيام المستهلكة: <span className="font-medium">{consumedDays}</span> / {totalDays}</div>
+                        <div>التكلفة الحالية عند التسوية: <span className="font-bold text-primary">{currentDue.toLocaleString('ar-LY')} د.ل</span></div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </CardContent>
           </Card>
 
