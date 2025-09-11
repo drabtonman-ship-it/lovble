@@ -32,7 +32,7 @@ export default function Billboards() {
   const [addForm, setAddForm] = useState<any>({});
   const [adding, setAdding] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 40;
+  const PAGE_SIZE = 10;
 
   const openEdit = (bb: Billboard) => {
     setEditing(bb);
@@ -240,7 +240,7 @@ export default function Billboards() {
                 3 أشهر
               </Button>
               <Button variant="default" className="px-3 bg-primary">
-                شهر و��حد
+                شهر واحد
               </Button>
             </div>
           </div>
