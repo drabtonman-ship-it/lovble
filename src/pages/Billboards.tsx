@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
 import { MapPin, DollarSign, Filter, Plus, Search, Eye, Edit } from 'lucide-react';
 import { Billboard } from '@/types';
-import { loadBillboards } from '@/services/billboardService';
+import { loadBillboards, searchBillboards } from '@/services/billboardService';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 export default function Billboards() {
@@ -152,13 +152,11 @@ export default function Billboards() {
   const municipalities = [...new Set(billboards.map(b => (b as any).Municipality || (b as any).municipality).filter(Boolean))];
   const districts = [...new Set(billboards.map(b => (b as any).District || (b as any).district).filter(Boolean))];
   const levels = [...new Set(billboards.map(b => (b as any).Level || b.level).filter(Boolean))];
-  const filteredBillboards = billboards.filter((billboard) => {
-    const matchesSearch = billboard.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         billboard.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(billboard.status);
-    const matchesCity = selectedCities.length === 0 || selectedCities.includes(billboard.city);
-    
-    return matchesSearch && matchesStatus && matchesCity;
+  const searched = searchBillboards(billboards, searchQuery);
+  const filteredBillboards = searched.filter((billboard) => {
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(billboard.status as any);
+    const matchesCity = selectedCities.length === 0 || selectedCities.includes((billboard.city || '') as any);
+    return matchesStatus && matchesCity;
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredBillboards.length / PAGE_SIZE));
@@ -182,7 +180,7 @@ export default function Billboards() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">إدارة اللوحات الإعلانية</h1>
-          <p className="text-muted-foreground">عرض وإدارة جميع اللوحات الإعلانية مع إمكانية التعديل والصيانة</p>
+          <p className="text-muted-foreground">عرض وإدارة جميع اللوح��ت الإعلانية مع إمكانية التعديل والصيانة</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setAddOpen(true)} className="bg-gradient-primary text-white shadow-elegant hover:shadow-glow transition-smooth">
