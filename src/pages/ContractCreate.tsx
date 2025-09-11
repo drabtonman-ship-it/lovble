@@ -145,6 +145,29 @@ export default function ContractCreate() {
   
   const finalTotal = useMemo(() => Math.max(0, baseTotal - discountAmount), [baseTotal, discountAmount]);
 
+  useEffect(() => {
+    if (installments.length === 0 && finalTotal > 0) {
+      const half = Math.round((finalTotal / 2) * 100) / 100;
+      setInstallments([{ amount: half, months: 1 }, { amount: finalTotal - half, months: 2 }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalTotal]);
+
+  const distributeEvenly = (count: number) => {
+    count = Math.max(1, Math.min(6, Math.floor(count)));
+    const even = Math.floor((finalTotal / count) * 100) / 100;
+    const list = Array.from({ length: count }).map((_, i) => ({ amount: i === count - 1 ? Math.round((finalTotal - even * (count - 1)) * 100) / 100 : even, months: Math.max(1, i + 1) }));
+    setInstallments(list);
+  };
+
+  const cumulativeMonthsTo = (index: number) => installments.slice(0, index + 1).reduce((acc, it) => acc + (Number(it.months) || 0), 0);
+  const dueDateFor = (idx: number) => {
+    if (!startDate) return '';
+    const d = new Date(startDate);
+    d.setMonth(d.getMonth() + cumulativeMonthsTo(idx));
+    return d.toISOString().split('T')[0];
+  };
+
   // Filter logic matching ContractEdit exactly
   const filtered = useMemo(() => {
     return billboards.filter((b) => {
@@ -225,7 +248,7 @@ export default function ContractCreate() {
             </CardHeader>
             <CardContent>
               {selected.length === 0 ? (
-                <p className="text-muted-foreground">لا توجد لوحات</p>
+                <p className="text-muted-foreground">��ا توجد لوحات</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {billboards.filter(b => selected.includes(String(b.ID))).map((b) => {
@@ -273,7 +296,7 @@ export default function ContractCreate() {
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-1 relative min-w-[220px]">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="بحث عن لوحة" value={q} onChange={(e) => setQ(e.target.value)} className="pr-9" />
+                  <Input placeholder="بحث عن لو��ة" value={q} onChange={(e) => setQ(e.target.value)} className="pr-9" />
                 </div>
                 <Select value={city} onValueChange={setCity}>
                   <SelectTrigger className="w-[180px]"><SelectValue placeholder="المدينة" /></SelectTrigger>
