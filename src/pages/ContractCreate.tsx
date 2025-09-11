@@ -46,6 +46,8 @@ export default function ContractCreate() {
   const [userEditedRentCost, setUserEditedRentCost] = useState(false);
   const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
   const [discountValue, setDiscountValue] = useState<number>(0);
+  const [installments, setInstallments] = useState<Array<{ amount: number; months: number }>>([]);
+  const [showSettlement, setShowSettlement] = useState(false);
 
   // Get next contract number
   useEffect(() => {
