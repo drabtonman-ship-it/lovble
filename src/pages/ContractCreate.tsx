@@ -207,8 +207,13 @@ export default function ContractCreate() {
         discount: discountAmount,
         ad_type: adType,
         billboard_ids: selected,
-        contract_number: nextContractNumber, // Add auto-generated contract number
+        contract_number: nextContractNumber,
       };
+      if (installments.length > 0) payload['Payment 1'] = installments[0]?.amount || 0;
+      if (installments.length > 1) payload['Payment 2'] = installments[1]?.amount || 0;
+      if (installments.length > 2) payload['Payment 3'] = installments[2]?.amount || 0;
+      payload['Total Paid'] = 0;
+      payload['Remaining'] = finalTotal;
       if (customerId) payload.customer_id = customerId;
       await createContract(payload);
       toast.success('تم إنشاء العقد بنجاح');
@@ -248,7 +253,7 @@ export default function ContractCreate() {
             </CardHeader>
             <CardContent>
               {selected.length === 0 ? (
-                <p className="text-muted-foreground">��ا توجد لوحات</p>
+                <p className="text-muted-foreground">لا توجد لوحات</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {billboards.filter(b => selected.includes(String(b.ID))).map((b) => {
@@ -296,7 +301,7 @@ export default function ContractCreate() {
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-1 relative min-w-[220px]">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="بحث عن لو��ة" value={q} onChange={(e) => setQ(e.target.value)} className="pr-9" />
+                  <Input placeholder="بحث عن لوحة" value={q} onChange={(e) => setQ(e.target.value)} className="pr-9" />
                 </div>
                 <Select value={city} onValueChange={setCity}>
                   <SelectTrigger className="w-[180px]"><SelectValue placeholder="المدينة" /></SelectTrigger>
