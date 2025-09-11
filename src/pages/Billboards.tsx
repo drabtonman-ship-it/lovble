@@ -32,7 +32,7 @@ export default function Billboards() {
   const [addForm, setAddForm] = useState<any>({});
   const [adding, setAdding] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 40;
+  const PAGE_SIZE = 10;
 
   const openEdit = (bb: Billboard) => {
     setEditing(bb);
@@ -180,7 +180,7 @@ export default function Billboards() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">إدارة اللوحات الإعلانية</h1>
-          <p className="text-muted-foreground">عرض وإدارة جميع اللوح��ت الإعلانية مع إمكانية التعديل والصيانة</p>
+          <p className="text-muted-foreground">عرض وإدارة جميع اللوحات الإعلانية مع إمكانية التعديل والصيانة</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setAddOpen(true)} className="bg-gradient-primary text-white shadow-elegant hover:shadow-glow transition-smooth">
@@ -389,7 +389,7 @@ export default function Billboards() {
             <div>
               <Label>المقاس</Label>
               <Select value={editForm.Size || ''} onValueChange={(v) => setEditForm((p: any) => ({ ...p, Size: v }))}>
-                <SelectTrigger><SelectValue placeholder="اختر المقاس" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="��ختر المقاس" /></SelectTrigger>
                 <SelectContent>
                   {sizes.map((s) => (<SelectItem key={s} value={s as string}>{s}</SelectItem>))}
                 </SelectContent>
