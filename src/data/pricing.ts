@@ -52,10 +52,8 @@ export function getPriceFor(size: string, level: string | undefined, customer: s
     (r) => canonSize(r.size) === cs && String(r.billboard_level) === String(lvl) && String(r.customer_category) === String(customer)
   );
   if (!row) {
+    // allow fallback by ignoring level, but NEVER across categories
     row = PRICING_CACHE.find((r) => canonSize(r.size) === cs && String(r.customer_category) === String(customer));
-  }
-  if (!row) {
-    row = PRICING_CACHE.find((r) => canonSize(r.size) === cs);
   }
   if (!row) return null;
   return normalizeNumber((row as any)[key]);
@@ -69,10 +67,8 @@ export function getDailyPriceFor(size: string, level: string | undefined, custom
     (r) => canonSize(r.size) === cs && String(r.billboard_level) === String(lvl) && String(r.customer_category) === String(customer)
   );
   if (!row) {
+    // allow fallback by ignoring level, but NEVER across categories
     row = PRICING_CACHE.find((r) => canonSize(r.size) === cs && String(r.customer_category) === String(customer));
-  }
-  if (!row) {
-    row = PRICING_CACHE.find((r) => canonSize(r.size) === cs);
   }
   if (!row) return null;
   return normalizeNumber((row as any).one_day);
