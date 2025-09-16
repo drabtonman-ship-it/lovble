@@ -361,7 +361,7 @@ export default function Contracts() {
                 <CheckCircle className="h-6 w-6 text-success" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">عقود نش��ة</p>
+                <p className="text-sm text-muted-foreground">عقود نشطة</p>
                 <p className="text-2xl font-bold text-success">{contractStats.active}</p>
               </div>
             </div>
@@ -490,7 +490,7 @@ export default function Contracts() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleViewContract(String(contract.id))}
+                          onClick={() => navigate(`/admin/contracts/view?contract=${String(contract.id)}`)}
                           className="h-8 w-8 p-0"
                         >
                           <Eye className="h-4 w-4" />

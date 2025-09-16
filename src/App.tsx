@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Contracts from "./pages/Contracts";
 import ContractCreate from "./pages/ContractCreate";
 import ContractEdit from "./pages/ContractEdit";
+import ContractView from "./pages/ContractView";
 import Billboards from "./pages/Billboards";
 import Users from "./pages/Users";
 import PricingList from "./pages/PricingList";
@@ -204,6 +205,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <MainLayout>
                     <ContractEdit />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/contracts/view"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <MainLayout>
+                    <ContractView />
                   </MainLayout>
                 </ProtectedRoute>
               }
