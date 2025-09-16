@@ -582,7 +582,7 @@ export default function ContractEdit() {
                       if (price === null) {
                         price = getPriceFor(size as string, level as any, pricingCategory as CustomerType, months);
                       }
-                      const fallback = (Number((b as any).price) || 0) * (months || 1);
+                      const fallback = 0; // لا يوجد سعر لهذه الفئة
                       totalForBoard = price !== null ? price : fallback;
                     } else {
                       const days = Math.max(0, Number(durationDays || 0));
@@ -592,11 +592,7 @@ export default function ContractEdit() {
                         daily = getDailyPriceFor(size as string, level as any, pricingCategory as CustomerType);
                       }
                       if (daily === null) {
-                        let m1 = getPriceFromDatabase(size as string, level as any, pricingCategory, 1);
-                        if (m1 === null) {
-                          m1 = getPriceFor(size as string, level as any, pricingCategory as CustomerType, 1) || 0;
-                        }
-                        daily = m1 ? Math.round((m1 / 30) * 100) / 100 : 0;
+                        daily = 0; // لا يوجد سعر يومي لهذه الفئة
                       }
                       totalForBoard = (daily || 0) * days;
                     }
