@@ -238,12 +238,11 @@ export default function ContractCreate() {
         if (price === null) {
           price = getPriceFor(size, level, pricingCategory as CustomerType, months);
         }
-        
+
         if (price !== null) return acc + price;
-        
-        // Final fallback to billboard price
-        const monthly = Number((b as any).price) || 0;
-        return acc + monthly * months;
+
+        // لا يوجد سعر لهذه الفئة
+        return acc + 0;
       }, 0);
     } else {
       const days = Math.max(0, Number(durationDays || 0));
@@ -260,15 +259,11 @@ export default function ContractCreate() {
           daily = getDailyPriceFor(size, level, pricingCategory as CustomerType);
         }
         
-        // If still null, calculate from monthly price
+        // لا يوجد سعر يومي لهذه الفئة
         if (daily === null) {
-          let monthlyPrice = getPriceFromDatabase(size, level, pricingCategory, 1);
-          if (monthlyPrice === null) {
-            monthlyPrice = getPriceFor(size, level, pricingCategory as CustomerType, 1) || 0;
-          }
-          daily = monthlyPrice ? Math.round((monthlyPrice / 30) * 100) / 100 : 0;
+          daily = 0;
         }
-        
+
         return acc + (daily || 0) * days;
       }, 0);
     }
@@ -363,7 +358,7 @@ export default function ContractCreate() {
       const isNear = isNearExpiring(b);
       const isRented = hasContract || st === 'rented';
       
-      // منطق العرض حسب فلتر الحالة - إصلاح المنطق
+      // منطق العرض حسب فلتر الحالة - إص��اح المنطق
       let shouldShow = false;
       if (status === 'all') {
         shouldShow = true; // عرض جميع اللوحات
@@ -500,7 +495,7 @@ export default function ContractCreate() {
                       if (price === null) {
                         price = getPriceFor(size as string, level as any, pricingCategory as CustomerType, months);
                       }
-                      const fallback = (Number((b as any).price) || 0) * (months || 1);
+                      const fallback = 0; // لا يوجد سعر لهذه الفئة
                       totalForBoard = price !== null ? price : fallback;
                     } else {
                       const days = Math.max(0, Number(durationDays || 0));
@@ -510,11 +505,7 @@ export default function ContractCreate() {
                         daily = getDailyPriceFor(size as string, level as any, pricingCategory as CustomerType);
                       }
                       if (daily === null) {
-                        let m1 = getPriceFromDatabase(size as string, level as any, pricingCategory, 1);
-                        if (m1 === null) {
-                          m1 = getPriceFor(size as string, level as any, pricingCategory as CustomerType, 1) || 0;
-                        }
-                        daily = m1 ? Math.round((m1 / 30) * 100) / 100 : 0;
+                        daily = 0; // لا يوجد سعر يومي لهذه الفئة
                       }
                       totalForBoard = (daily || 0) * days;
                     }
