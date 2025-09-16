@@ -361,7 +361,7 @@ export default function Contracts() {
                 <CheckCircle className="h-6 w-6 text-success" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">عقود نشطة</p>
+                <p className="text-sm text-muted-foreground">عقود نش��ة</p>
                 <p className="text-2xl font-bold text-success">{contractStats.active}</p>
               </div>
             </div>
@@ -614,26 +614,7 @@ export default function Contracts() {
                               <p className="text-sm">الحجم: {billboard.Size || billboard.size}</p>
                               <p className="text-sm">المدينة: {billboard.City || billboard.city}</p>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={async () => {
-                                try {
-                                  const contractNumber = String(selectedContract.Contract_Number ?? selectedContract['Contract Number'] ?? selectedContract.id);
-                                  await removeBillboardFromContract(contractNumber, billboard.ID || billboard.id);
-                                  toast.success('تم إزالة اللوحة من العقد');
-                                  const refreshed = await getContractWithBillboards(contractNumber);
-                                  setSelectedContract(refreshed);
-                                  const av = await getAvailableBillboards();
-                                  setAvailableBillboards(av || []);
-                                } catch (e) {
-                                  console.error(e);
-                                  toast.error('فشل إزالة اللوحة');
-                                }
-                              }}
-                            >
-                              إزالة
-                            </Button>
+                            <div className="text-xs text-muted-foreground">ضمن العقد</div>
                           </CardContent>
                         </Card>
                       ))}
@@ -642,69 +623,7 @@ export default function Contracts() {
                 </Card>
               )}
 
-              {/* التعديل: إضافة لوحات أثناء سريان العقد */}
-              {(() => {
-                const today = new Date();
-                const start = selectedContract.start_date ? new Date(selectedContract.start_date) : (selectedContract['Contract Date'] ? new Date(selectedContract['Contract Date']) : null);
-                const end = selectedContract.end_date ? new Date(selectedContract.end_date) : (selectedContract['End Date'] ? new Date(selectedContract['End Date']) : null);
-                const active = start && end && today >= start && today <= end;
-                if (!active) return null;
-                const filtered = (availableBillboards || []).filter((b) => {
-                  const q = editBbSearch.trim().toLowerCase();
-                  if (!q) return true;
-                  return [(b as any).Billboard_Name, (b as any).Nearest_Landmark, (b as any).City, (b as any).Size]
-                    .some((v: any) => String(v || '').toLowerCase().includes(q));
-                });
-                return (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">إضافة لوحات إلى العقد (نشط)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-3">
-                        <Input placeholder="بحث عن لوحة..." value={editBbSearch} onChange={(e) => setEditBbSearch(e.target.value)} />
-                      </div>
-                      <div className="max-h-96 overflow-auto space-y-2">
-                        {filtered.map((b: any) => (
-                          <div key={b.ID} className="flex items-center justify-between rounded-lg border p-3">
-                            <div>
-                              <div className="font-medium">{b.Billboard_Name}</div>
-                              <div className="text-xs text-muted-foreground">{b.Nearest_Landmark} • {b.Size}</div>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                try {
-                                  const contractNumber = String(selectedContract.Contract_Number ?? selectedContract['Contract Number'] ?? selectedContract.id);
-                                  await addBillboardsToContract(contractNumber, [b.ID], {
-                                    start_date: selectedContract.start_date || selectedContract['Contract Date'],
-                                    end_date: selectedContract.end_date || selectedContract['End Date'],
-                                    customer_name: selectedContract.customer_name || selectedContract['Customer Name'] || '',
-                                  });
-                                  toast.success('تم إضافة اللوحة إلى العقد');
-                                  const refreshed = await getContractWithBillboards(contractNumber);
-                                  setSelectedContract(refreshed);
-                                  const av = await getAvailableBillboards();
-                                  setAvailableBillboards(av || []);
-                                } catch (e) {
-                                  console.error(e);
-                                  toast.error('فشل إضافة اللوحة');
-                                }
-                              }}
-                            >
-                              إضافة
-                            </Button>
-                          </div>
-                        ))}
-                        {filtered.length === 0 && (
-                          <p className="text-sm text-muted-foreground">لا توجد لوحات متاحة مطابقة</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })()}
+              {null}
             </div>
           )}
         </DialogContent>
