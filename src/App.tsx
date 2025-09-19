@@ -25,6 +25,7 @@ import BookingRequests from "./pages/BookingRequests";
 import SharedBillboards from "./pages/SharedBillboards";
 import SharedCompanies from "./pages/SharedCompanies";
 import Payments from "./pages/Payments";
+import CustomerBilling from "./pages/CustomerBilling";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -176,6 +177,16 @@ const App = () => (
                 <ProtectedRoute requireAdmin>
                   <MainLayout>
                     <Customers />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/customer-billing"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <MainLayout>
+                    <CustomerBilling />
                   </MainLayout>
                 </ProtectedRoute>
               }

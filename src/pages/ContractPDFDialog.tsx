@@ -86,12 +86,6 @@ export default function ContractPDFDialog({ open, onOpenChange, contract }: Cont
     }
   };
 
-  // Auto-generate PDF immediately when dialog opens and customer data is loaded (only in auto mode)
-  useEffect(() => {
-    if (open && contract && customerData && printMode === 'auto') {
-      handlePrintContract();
-    }
-  }, [open, contract, customerData, printMode]);
 
   const calculateContractDetails = () => {
     const startDate = contract?.start_date || contract?.['Contract Date'];
@@ -148,7 +142,7 @@ export default function ContractPDFDialog({ open, onOpenChange, contract }: Cont
         price: contractDetails.price,
         duration: contractDetails.duration,
         year: year.toString(),
-        companyName: 'شركة الفارس الذهبي للدعاية والإعلان',
+        companyName: 'شركة الفارس الذهبي للدعاية ��الإعلان',
         phoneNumber: '0912612255'
       };
 
@@ -535,7 +529,7 @@ export default function ContractPDFDialog({ open, onOpenChange, contract }: Cont
               <text x="1190" y="1715" font-family="Doran, sans-serif" font-size="46" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">يلتزم الطرف الثاني بتجهيز التصميم في أسرع وقت وأي تأخير يعتبر مسؤوليته، وتبدي مدة العقد من التاريخ .</text>
               <text x="2095" y="1775" font-family="Doran, sans-serif" font-size="46" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">المذكور في المادة السادسة</text>
               <text x="2230" y="1890" font-family="Doran, sans-serif" font-weight="bold" font-size="42" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">البند الثاني:</text>
-              <text x="1170" y="1890" font-family="Doran, sans-serif" font-size="46" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">يلتزم الطرف الأول بتعبئة وتركيب التصاميم بدقة على المساحات المتفق عليها وفق الجدول المرفق، ويتحمل .</text>
+              <text x="1170" y="1890" font-family="Doran, sans-serif" font-size="46" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">يلتزم الطرف الأول بتعبئة وت��كيب التصاميم بدقة على المساحات المتفق عليها وفق الجدول المرفق، ويتحمل .</text>
               <text x="1850" y="1950" font-family="Doran, sans-serif" font-size="42" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">الأخير تكاليف التغيير الناتجة عن الأحوال الجوية أو الحوادث.</text>
               <text x="2225" y="2065" font-family="Doran, sans-serif" font-weight="bold" font-size="42" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">البند الثالث:</text>
               <text x="1240" y="2065" font-family="Doran, sans-serif" font-size="42" fill="#000" text-anchor="middle" dominant-baseline="middle" style="direction: rtl; text-align: center">في حال وقوع ظروف قاهرة تؤثر على إحدى المساحات، يتم نقل الإعلان إلى موقع بديل، ويتولى الطرف الأول</text>
@@ -634,7 +628,7 @@ export default function ContractPDFDialog({ open, onOpenChange, contract }: Cont
       // Enhanced error handling for window operations
       const handlePrintWindowError = (error: any) => {
         console.error('Print window error:', error);
-        toast.error('حدث خطأ في نافذة الطباعة. يرجى المحاولة مرة أخرى.');
+        toast.error('حد�� خطأ في نافذة الطباعة. يرجى المحاولة مرة أخرى.');
       };
 
       printWindow.addEventListener('error', handlePrintWindowError);

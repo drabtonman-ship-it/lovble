@@ -198,7 +198,7 @@ export async function createContract(contractData: ContractData) {
     } catch (e) {
       console.error('Both Contract and contracts table insertion failed:', formatSupabaseErr(contractError) + ' | ' + formatSupabaseErr(contractsError ?? e));
       const details = formatSupabaseErr(contractError) + ' | ' + formatSupabaseErr(contractsError ?? e);
-      throw new Error('فشل في حفظ العقد في قاعدة البيانات. تفاصيل الخطأ: ' + details);
+      throw new Error('فشل في حفظ العقد في قاع��ة البيانات. تفاصيل الخطأ: ' + details);
     }
   }
 
@@ -705,6 +705,63 @@ async function updateContractBillboardsData(contractNumber: string) {
   } catch (error) {
     console.error('Failed to update contract billboard data:', error);
   }
+}
+
+// إنشاء نسخة جديدة من عقد موجود (تجديد) بنفس اللوحات ورقم عقد جديد
+export async function renewContract(originalContractId: string, options?: { start_date?: string; end_date?: string; keep_cost?: boolean }) {
+  if (!originalContractId) throw new Error('originalContractId مطلوب');
+
+  // احضر العقد مع اللوحات
+  const original = await getContractWithBillboards(String(originalContractId));
+
+  // احسب التواريخ الجديدة
+  const origStart = original.start_date || original['Contract Date'] || '';
+  const origEnd = original.end_date || original['End Date'] || '';
+
+  let newStart = options?.start_date;
+  let newEnd = options?.end_date;
+
+  if (!newStart || !newEnd) {
+    const today = new Date();
+    // المدة بالأشهر من العقد الأصلي
+    let months = 1;
+    try {
+      if (origStart && origEnd) {
+        const sd = new Date(origStart);
+        const ed = new Date(origEnd);
+        const diffDays = Math.max(1, Math.ceil(Math.abs(ed.getTime() - sd.getTime()) / 86400000));
+        months = Math.max(1, Math.round(diffDays / 30));
+      }
+    } catch {}
+    const s = today;
+    const e = new Date(s);
+    e.setMonth(e.getMonth() + months);
+    newStart = newStart || s.toISOString().slice(0,10);
+    newEnd = newEnd || e.toISOString().slice(0,10);
+  }
+
+  // جمع معرفات اللوحات المرتبطة حالياً
+  const billboardIds: string[] = Array.isArray(original.billboards)
+    ? original.billboards.map((b: any) => String(b.ID ?? b.id)).filter(Boolean)
+    : [];
+
+  // جهز بيانات العقد الجديد
+  const payload: ContractCreate = {
+    customer_name: original.customer_name || original['Customer Name'] || '',
+    ad_type: original.ad_type || original['Ad Type'] || '',
+    start_date: String(newStart),
+    end_date: String(newEnd),
+    rent_cost: options?.keep_cost === false ? 0 : (Number(original.rent_cost ?? original['Total Rent'] ?? 0) || 0),
+    billboard_ids: billboardIds,
+  };
+
+  // حافظ على فئة التسعير إن وجدت
+  if ((original as any).customer_category) (payload as any).customer_category = (original as any).customer_category;
+  if ((original as any).customer_id) (payload as any).customer_id = (original as any).customer_id;
+
+  // أنشئ العقد الجديد وسيتم تحديث اللوحات تلقائياً داخل createContract
+  const created = await createContract(payload);
+  return created;
 }
 
 // Export types
