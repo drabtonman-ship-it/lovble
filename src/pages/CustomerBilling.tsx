@@ -33,7 +33,6 @@ interface ContractRow {
   'Start Date'?: string | null;
   'End Date'?: string | null;
   customer_id?: string | null;
-  'Number of Boards'?: number | null;
 }
 
 interface InvoiceItem {
@@ -51,7 +50,6 @@ interface PrintInvoiceItem {
   units: number;
   pricePerUnit: number;
   total: number;
-  numberOfBoards: number;
 }
 
 export default function CustomerBilling() {
@@ -157,7 +155,9 @@ export default function CustomerBilling() {
         // Set default print price from installation prices (assuming there's a print/installation price)
         const printPrice = pricesData.find(p => p.service_type?.toLowerCase().includes('طباعة') || p.service_type?.toLowerCase().includes('تركيب'));
         if (printPrice) {
-          setDefaultPrintPrice(Number(printPrice.price) || 0);
+          setDefaultPrintPrice(Number(printPrice.price) || 50);
+        } else {
+          setDefaultPrintPrice(50); // Default fallback price
         }
       }
     } catch (e) {
@@ -285,16 +285,17 @@ export default function CustomerBilling() {
   };
 
   const initializePrintInvoiceItems = () => {
-    const items = activeContracts.map(contract => ({
-      contractNumber: String(contract.Contract_Number || ''),
-      adType: contract['Ad Type'] || '',
-      selected: false,
-      units: Number(contract['Number of Boards']) || 1,
-      pricePerUnit: defaultPrintPrice,
-      total: 0,
-      numberOfBoards: Number(contract['Number of Boards']) || 1
-    }));
-    setPrintInvoiceItems(items);
+    // Initialize with empty items for manual entry, not based on contracts
+    setPrintInvoiceItems([
+      {
+        contractNumber: '',
+        adType: '',
+        selected: true,
+        units: 1,
+        pricePerUnit: defaultPrintPrice,
+        total: defaultPrintPrice
+      }
+    ]);
   };
 
   const updateInvoiceItem = (index: number, field: keyof InvoiceItem, value: any) => {
@@ -317,6 +318,24 @@ export default function CustomerBilling() {
     }
     
     setPrintInvoiceItems(newItems);
+  };
+
+  const addPrintInvoiceItem = () => {
+    setPrintInvoiceItems([...printInvoiceItems, {
+      contractNumber: '',
+      adType: '',
+      selected: true,
+      units: 1,
+      pricePerUnit: defaultPrintPrice,
+      total: defaultPrintPrice
+    }]);
+  };
+
+  const removePrintInvoiceItem = (index: number) => {
+    if (printInvoiceItems.length > 1) {
+      const newItems = printInvoiceItems.filter((_, i) => i !== index);
+      setPrintInvoiceItems(newItems);
+    }
   };
 
   const printCustomInvoice = () => {
@@ -409,7 +428,7 @@ export default function CustomerBilling() {
     const selectedItems = printInvoiceItems.filter(item => item.selected && item.units > 0);
     
     if (selectedItems.length === 0) {
-      toast.error('يرجى اختيار عقد واحد على الأقل وتحديد عدد الوحدات');
+      toast.error('يرجى إضافة عنصر واحد على الأقل وتحديد عدد الوحدات');
       return;
     }
 
@@ -419,6 +438,18 @@ export default function CustomerBilling() {
     }
 
     const totalAmount = selectedItems.reduce((sum, item) => sum + item.total, 0);
+    const totalUnits = selectedItems.reduce((sum, item) => sum + item.units, 0);
+
+    const itemRows = selectedItems.map((item, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${item.contractNumber || '—'}</td>
+        <td>${item.adType || 'خدمة طباعة'}</td>
+        <td>${item.units}</td>
+        <td>${item.pricePerUnit.toLocaleString('ar-LY')} د.ل</td>
+        <td>${item.total.toLocaleString('ar-LY')} د.ل</td>
+      </tr>
+    `).join('');
 
     const html = `<!DOCTYPE html>
 <html dir='rtl'>
@@ -436,190 +467,184 @@ export default function CustomerBilling() {
         
         body {
             font-family: 'Cairo', Arial, sans-serif;
-            background: #f8f9fa;
-            color: #2c3e50;
+            background: white;
+            color: #000;
             padding: 0;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            line-height: 1.4;
         }
         
-        .invoice-container {
-            max-width: 400px;
-            margin: 20px auto;
+        .invoice {
             background: white;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 3px solid #FFD700;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            page-break-inside: avoid;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
         
         .header {
             background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            padding: 30px 25px;
             text-align: center;
+            padding: 30px 20px;
+            color: #000;
             position: relative;
         }
         
-        .receipt-number {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: #2c3e50;
-            color: #FFD700;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-        
-        .logo-section {
+        .logo-container {
             margin-bottom: 20px;
         }
         
-        .logo-placeholder {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 15px;
-            background: #2c3e50;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #FFD700;
-            font-size: 24px;
-            font-weight: 700;
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+            display: block;
         }
         
         .company-name {
             font-size: 28px;
             font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            margin: 15px 0 5px;
+            color: #000;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
         }
         
         .company-subtitle {
             font-size: 16px;
-            color: #34495e;
+            color: #333;
             margin-bottom: 20px;
-            font-weight: 500;
         }
         
         .title {
-            background: white;
-            color: #2c3e50;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 700;
+            color: #000;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 25px;
             display: inline-block;
-            border: 2px solid #2c3e50;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #000;
         }
         
         .content {
             padding: 25px;
+            background: white;
         }
         
-        .info-section {
-            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+        .customer-section {
+            background: linear-gradient(135deg, #FFF8DC 0%, #FFFACD 100%);
+            border: 2px solid #FFD700;
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
-            border-left: 5px solid #FFD700;
         }
         
         .info-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #FFD700;
-            font-size: 15px;
+            margin-bottom: 8px;
         }
         
         .info-row:last-child {
             border-bottom: none;
+            margin-bottom: 0;
         }
         
         .label {
-            font-weight: 600;
-            color: #2c3e50;
+            font-weight: 700;
+            color: #000;
+            font-size: 14px;
         }
         
         .value {
-            font-weight: 500;
-            color: #34495e;
-        }
-        
-        .amount-highlight {
-            background: #2c3e50;
-            color: #FFD700;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
         }
         
         .reason-section {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            background: linear-gradient(135deg, #E6F3FF 0%, #CCE7FF 100%);
+            border: 2px solid #4169E1;
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
-            border-left: 5px solid #2196f3;
             text-align: center;
         }
         
         .reason-title {
             font-size: 16px;
             font-weight: 700;
-            color: #1976d2;
+            color: #4169E1;
             margin-bottom: 10px;
         }
         
         .reason-text {
             font-size: 14px;
-            color: #2c3e50;
-            font-weight: 500;
+            color: #000;
+            font-weight: 600;
             line-height: 1.5;
         }
         
-        .total-section {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            border: 1px solid #FFD700;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        th {
             background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            font-weight: 700;
+            color: #000;
+        }
+        
+        .total-section {
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            color: #FFD700;
+            padding: 20px;
             border-radius: 15px;
-            padding: 25px;
             text-align: center;
             margin: 20px 0;
-            border: 3px solid #2c3e50;
         }
         
         .total-label {
-            font-size: 16px;
+            font-size: 14px;
+            margin-bottom: 8px;
             font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 10px;
         }
         
         .total-amount {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 700;
-            color: #2c3e50;
-            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
         }
         
         .footer {
-            background: #2c3e50;
-            color: #FFD700;
             text-align: center;
             padding: 20px;
-            font-size: 13px;
-            font-weight: 500;
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            color: #FFD700;
+            font-size: 12px;
+            font-weight: 600;
         }
         
         .contact-info {
             margin-top: 8px;
             font-size: 11px;
-            opacity: 0.9;
         }
         
         @media print {
@@ -630,11 +655,10 @@ export default function CustomerBilling() {
                 print-color-adjust: exact !important;
             }
             
-            .invoice-container {
+            .invoice {
+                border: 2px solid #FFD700 !important;
+                page-break-inside: avoid;
                 box-shadow: none !important;
-                margin: 0 !important;
-                max-width: none !important;
-                page-break-inside: avoid !important;
             }
             
             .header {
@@ -643,21 +667,21 @@ export default function CustomerBilling() {
                 print-color-adjust: exact !important;
             }
             
-            .total-section {
+            th {
                 background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             
-            .footer {
-                background: #2c3e50 !important;
+            .total-section {
+                background: linear-gradient(135deg, #000 0%, #333 100%) !important;
                 color: #FFD700 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             
-            .amount-highlight {
-                background: #2c3e50 !important;
+            .footer {
+                background: linear-gradient(135deg, #000 0%, #333 100%) !important;
                 color: #FFD700 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -666,36 +690,29 @@ export default function CustomerBilling() {
     </style>
 </head>
 <body>
-    <div class="invoice-container">
+    <div class="invoice">
         <div class="header">
-            <div class="receipt-number">#${Date.now().toString().slice(-6)}</div>
-            
-            <div class="logo-section">
-                <div class="logo-placeholder">فارس</div>
+            <div class="logo-container">
+                <img src="/coplete logofares-text. and sympol.svg" alt="شعار شركة فارس" class="logo" onerror="this.style.display='none'">
             </div>
-            
             <div class="company-name">شركة فارس</div>
             <div class="company-subtitle">للإعلانات والتسويق</div>
             <div class="title">إيصال دفع</div>
         </div>
         
         <div class="content">
-            <div class="info-section">
+            <div class="customer-section">
                 <div class="info-row">
                     <span class="label">العميل:</span>
                     <span class="value">${customerName}</span>
                 </div>
                 <div class="info-row">
                     <span class="label">رقم العقد:</span>
-                    <span class="value">${selectedItems.map(item => item.contractNumber).join(', ')}</span>
+                    <span class="value">1098</span>
                 </div>
                 <div class="info-row">
                     <span class="label">النوع:</span>
                     <span class="value">إيصال</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">المبلغ:</span>
-                    <span class="value amount-highlight">${totalAmount.toLocaleString('ar-LY')} د.ل</span>
                 </div>
                 <div class="info-row">
                     <span class="label">التاريخ:</span>
@@ -719,6 +736,22 @@ export default function CustomerBilling() {
                 <div class="reason-title">سبب الطباعة والتركيب</div>
                 <div class="reason-text">${printInvoiceReason}</div>
             </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>العقد</th>
+                        <th>النوع</th>
+                        <th>الوحدات</th>
+                        <th>السعر</th>
+                        <th>المجموع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemRows}
+                </tbody>
+            </table>
             
             <div class="total-section">
                 <div class="total-label">الرصيد المتبقي بعد الدفع</div>
@@ -772,167 +805,158 @@ export default function CustomerBilling() {
         
         body {
             font-family: 'Cairo', Arial, sans-serif;
-            background: #f8f9fa;
-            color: #2c3e50;
-            padding: 0;
+            background: white;
+            color: #000;
+            padding: 20px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
         
-        .invoice-container {
-            max-width: 400px;
-            margin: 20px auto;
+        .receipt {
             background: white;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 3px solid #FFD700;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            page-break-inside: avoid;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
         
         .header {
             background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            padding: 30px 25px;
             text-align: center;
+            padding: 30px 20px;
+            color: #000;
             position: relative;
+        }
+        
+        .logo-container {
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .company-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 15px 0 5px;
+            color: #000;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+        }
+        
+        .company-subtitle {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            border: 2px solid #000;
         }
         
         .receipt-number {
             position: absolute;
             top: 15px;
             right: 20px;
-            background: #2c3e50;
+            background: #000;
             color: #FFD700;
-            padding: 8px 15px;
+            padding: 8px 12px;
             border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-        
-        .logo-section {
-            margin-bottom: 20px;
-        }
-        
-        .logo-placeholder {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 15px;
-            background: #2c3e50;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #FFD700;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        
-        .company-name {
-            font-size: 28px;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
-        }
-        
-        .company-subtitle {
-            font-size: 16px;
-            color: #34495e;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-        
-        .title {
-            background: white;
-            color: #2c3e50;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-size: 20px;
-            font-weight: 700;
-            display: inline-block;
-            border: 2px solid #2c3e50;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 12px;
+            font-weight: bold;
         }
         
         .content {
             padding: 25px;
+            background: white;
         }
         
-        .info-section {
-            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-left: 5px solid #FFD700;
-        }
-        
-        .info-row {
+        .field {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #FFD700;
-            font-size: 15px;
+            padding: 12px 0;
+            border-bottom: 2px solid #FFD700;
+            margin-bottom: 8px;
         }
         
-        .info-row:last-child {
+        .field:last-child {
             border-bottom: none;
         }
         
         .label {
-            font-weight: 600;
-            color: #2c3e50;
+            font-weight: 700;
+            color: #000;
+            font-size: 16px;
         }
         
         .value {
-            font-weight: 500;
-            color: #34495e;
-        }
-        
-        .amount-highlight {
-            background: #2c3e50;
-            color: #FFD700;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 16px;
-        }
-        
-        .total-section {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            margin: 20px 0;
-            border: 3px solid #2c3e50;
-        }
-        
-        .total-label {
-            font-size: 16px;
             font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+            text-align: left;
         }
         
-        .total-amount {
-            font-size: 32px;
+        .amount {
+            color: #FFD700;
             font-weight: 700;
-            color: #2c3e50;
-            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            font-size: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            background: #000;
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+        
+        .balance-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: 3px solid #000;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .balance-label {
+            font-size: 14px;
+            color: #000;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        .balance-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
         }
         
         .footer {
-            background: #2c3e50;
-            color: #FFD700;
             text-align: center;
             padding: 20px;
-            font-size: 13px;
-            font-weight: 500;
+            background: #000;
+            color: #FFD700;
+            font-size: 14px;
+            font-weight: 600;
+            border-top: 3px solid #FFD700;
         }
         
         .contact-info {
-            margin-top: 8px;
-            font-size: 11px;
-            opacity: 0.9;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #FFD700;
         }
         
         @media print {
@@ -943,11 +967,10 @@ export default function CustomerBilling() {
                 print-color-adjust: exact !important;
             }
             
-            .invoice-container {
+            .receipt {
                 box-shadow: none !important;
-                margin: 0 !important;
-                max-width: none !important;
-                page-break-inside: avoid !important;
+                border: 2px solid #FFD700 !important;
+                page-break-inside: avoid;
             }
             
             .header {
@@ -956,21 +979,21 @@ export default function CustomerBilling() {
                 print-color-adjust: exact !important;
             }
             
-            .total-section {
+            .balance-section {
                 background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             
             .footer {
-                background: #2c3e50 !important;
+                background: #000 !important;
                 color: #FFD700 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             
-            .amount-highlight {
-                background: #2c3e50 !important;
+            .amount {
+                background: #000 !important;
                 color: #FFD700 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
@@ -979,12 +1002,12 @@ export default function CustomerBilling() {
     </style>
 </head>
 <body>
-    <div class="invoice-container">
+    <div class="receipt">
         <div class="header">
             <div class="receipt-number">#${payment.id.slice(-6)}</div>
             
-            <div class="logo-section">
-                <div class="logo-placeholder">فارس</div>
+            <div class="logo-container">
+                <img src="/coplete logofares-text. and sympol.svg" alt="شعار شركة فارس" class="logo" onerror="this.style.display='none'">
             </div>
             
             <div class="company-name">شركة فارس</div>
@@ -993,47 +1016,52 @@ export default function CustomerBilling() {
         </div>
         
         <div class="content">
-            <div class="info-section">
-                <div class="info-row">
-                    <span class="label">العميل:</span>
-                    <span class="value">${customerName}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">رقم العقد:</span>
-                    <span class="value">${payment.contract_number || 'حساب عام'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">النوع:</span>
-                    <span class="value">${payment.entry_type === 'account_payment' ? 'دفعة حساب' :
-                                       payment.entry_type === 'receipt' ? 'إيصال' :
-                                       payment.entry_type === 'debt' ? 'دين سابق' :
-                                       payment.entry_type || '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">المبلغ:</span>
-                    <span class="value amount-highlight">${paymentAmount.toLocaleString('ar-LY')} د.ل</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">التاريخ:</span>
-                    <span class="value">${payment.paid_at ? new Date(payment.paid_at).toLocaleDateString('ar-LY') : ''}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">طريقة الدفع:</span>
-                    <span class="value">${payment.method || '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">المرجع:</span>
-                    <span class="value">${payment.reference || '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">ملاحظات:</span>
-                    <span class="value">${payment.notes || '—'}</span>
-                </div>
+            <div class="field">
+                <span class="label">العميل:</span>
+                <span class="value">${customerName}</span>
             </div>
             
-            <div class="total-section">
-                <div class="total-label">الرصيد المتبقي بعد الدفع</div>
-                <div class="total-amount">${remainingAfterPayment.toLocaleString('ar-LY')} د.ل</div>
+            <div class="field">
+                <span class="label">رقم العقد:</span>
+                <span class="value">${payment.contract_number || 'حساب عام'}</span>
+            </div>
+            
+            <div class="field">
+                <span class="label">النوع:</span>
+                <span class="value">${payment.entry_type === 'account_payment' ? 'دفعة حساب' :
+                                   payment.entry_type === 'receipt' ? 'إيصال' :
+                                   payment.entry_type === 'debt' ? 'دين سابق' :
+                                   payment.entry_type || '—'}</span>
+            </div>
+            
+            <div class="field">
+                <span class="label">المبلغ:</span>
+                <span class="value amount">${paymentAmount.toLocaleString('ar-LY')} د.ل</span>
+            </div>
+            
+            <div class="field">
+                <span class="label">التاريخ:</span>
+                <span class="value">${payment.paid_at ? new Date(payment.paid_at).toLocaleDateString('ar-LY') : ''}</span>
+            </div>
+            
+            <div class="field">
+                <span class="label">طريقة الدفع:</span>
+                <span class="value">${payment.method || '—'}</span>
+            </div>
+            
+            <div class="field">
+                <span class="label">المرجع:</span>
+                <span class="value">${payment.reference || '—'}</span>
+            </div>
+            
+            <div class="field">
+                <span class="label">ملاحظات:</span>
+                <span class="value">${payment.notes || '—'}</span>
+            </div>
+            
+            <div class="balance-section">
+                <div class="balance-label">الرصيد المتبقي بعد الدفع</div>
+                <div class="balance-amount">${remainingAfterPayment.toLocaleString('ar-LY')} د.ل</div>
             </div>
         </div>
         
@@ -1130,7 +1158,6 @@ export default function CustomerBilling() {
                   <TableRow>
                     <TableHead>رقم العقد</TableHead>
                     <TableHead>نوع الإعلان</TableHead>
-                    <TableHead>عدد اللوحات</TableHead>
                     <TableHead>تاريخ البداية</TableHead>
                     <TableHead>تاريخ النهاية</TableHead>
                     <TableHead>الحالة</TableHead>
@@ -1155,7 +1182,6 @@ export default function CustomerBilling() {
                       <TableRow key={String(ct.Contract_Number)}>
                         <TableCell className="font-medium">{String(ct.Contract_Number||'')}</TableCell>
                         <TableCell>{ct['Ad Type'] || '—'}</TableCell>
-                        <TableCell className="font-semibold text-blue-600">{Number(ct['Number of Boards']) || 0}</TableCell>
                         <TableCell>{ct['Start Date'] ? new Date(ct['Start Date']).toLocaleDateString('ar-LY') : '—'}</TableCell>
                         <TableCell>{ct['End Date'] ? new Date(ct['End Date']).toLocaleDateString('ar-LY') : '—'}</TableCell>
                         <TableCell>
@@ -1469,96 +1495,112 @@ export default function CustomerBilling() {
             <DialogTitle className="text-xl font-bold">فاتورة طباعة وتركيب</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="text-sm text-blue-600 mb-1">العميل:</div>
-              <div className="font-semibold text-lg">{customerName}</div>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+              <div className="text-sm text-blue-600 mb-1 font-medium">العميل:</div>
+              <div className="font-bold text-lg text-blue-900">{customerName}</div>
             </div>
 
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 block">سبب الطباعة والتركيب</label>
+              <label className="text-sm font-bold text-gray-800 block">سبب الطباعة والتركيب</label>
               <Textarea 
                 value={printInvoiceReason} 
                 onChange={(e)=> setPrintInvoiceReason(e.target.value)}
-                className="text-right min-h-[80px]"
+                className="text-right min-h-[80px] border-2 border-gray-200 focus:border-blue-500 rounded-lg"
                 placeholder="اكتب سبب الطباعة والتركيب..."
               />
             </div>
             
             <div>
-              <label className="text-sm font-semibold mb-3 block">اختر العقود الفعالة للطباعة:</label>
-              <div className="space-y-2 max-h-60 overflow-y-auto border rounded p-3">
-                {activeContracts.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>اختيار</TableHead>
-                        <TableHead>رقم العقد</TableHead>
-                        <TableHead>نوع الإعلان</TableHead>
-                        <TableHead>عدد اللوحات</TableHead>
-                        <TableHead>عدد الوحدات للطباعة</TableHead>
-                        <TableHead>سعر الوحدة</TableHead>
-                        <TableHead>الإجمالي</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {printInvoiceItems.map((item, index) => (
-                        <TableRow key={item.contractNumber}>
-                          <TableCell>
-                            <Checkbox
-                              checked={item.selected}
-                              onCheckedChange={(checked) => updatePrintInvoiceItem(index, 'selected', checked)}
-                            />
-                          </TableCell>
-                          <TableCell>{item.contractNumber}</TableCell>
-                          <TableCell>{item.adType}</TableCell>
-                          <TableCell className="font-semibold text-blue-600">{item.numberOfBoards}</TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={item.units}
-                              onChange={(e) => updatePrintInvoiceItem(index, 'units', Number(e.target.value) || 1)}
-                              className="w-20"
-                              disabled={!item.selected}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={item.pricePerUnit}
-                              onChange={(e) => updatePrintInvoiceItem(index, 'pricePerUnit', Number(e.target.value) || 0)}
-                              className="w-32"
-                              disabled={!item.selected}
-                            />
-                          </TableCell>
-                          <TableCell className="font-semibold">
-                            {item.total.toLocaleString('ar-LY')} د.ل
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center text-muted-foreground py-6">
-                    لا توجد عقود فعالة للعميل
+              <div className="flex justify-between items-center mb-4">
+                <label className="text-sm font-bold text-gray-800">عناصر الطباعة والتركيب:</label>
+                <Button onClick={addPrintInvoiceItem} size="sm" className="bg-green-600 hover:bg-green-700">
+                  <Plus className="h-4 w-4 ml-1" />
+                  إضافة عنصر
+                </Button>
+              </div>
+              
+              <div className="space-y-4 max-h-80 overflow-y-auto border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                {printInvoiceItems.map((item, index) => (
+                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-600">رقم العقد (اختياري)</label>
+                        <Input
+                          value={item.contractNumber}
+                          onChange={(e) => updatePrintInvoiceItem(index, 'contractNumber', e.target.value)}
+                          className="text-right text-sm"
+                          placeholder="رقم العقد"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-600">نوع الخدمة</label>
+                        <Input
+                          value={item.adType}
+                          onChange={(e) => updatePrintInvoiceItem(index, 'adType', e.target.value)}
+                          className="text-right text-sm"
+                          placeholder="نوع الخدمة"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-600">عدد الوحدات</label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={item.units}
+                          onChange={(e) => updatePrintInvoiceItem(index, 'units', Number(e.target.value) || 1)}
+                          className="text-right text-sm"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-600">سعر الوحدة</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.pricePerUnit}
+                          onChange={(e) => updatePrintInvoiceItem(index, 'pricePerUnit', Number(e.target.value) || 0)}
+                          className="text-right text-sm"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-600">الإجمالي</label>
+                        <div className="bg-gray-100 p-2 rounded text-sm font-bold text-center">
+                          {item.total.toLocaleString('ar-LY')} د.ل
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-600">إجراءات</label>
+                        <Button 
+                          onClick={() => removePrintInvoiceItem(index)} 
+                          size="sm" 
+                          variant="destructive"
+                          disabled={printInvoiceItems.length <= 1}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>إجمالي الفاتورة:</span>
-                <span className="text-green-600">
-                  {printInvoiceItems.filter(item => item.selected).reduce((sum, item) => sum + item.total, 0).toLocaleString('ar-LY')} د.ل
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+              <div className="flex justify-between items-center text-xl font-bold">
+                <span className="text-green-800">إجمالي الفاتورة:</span>
+                <span className="text-green-600 text-2xl">
+                  {printInvoiceItems.reduce((sum, item) => sum + item.total, 0).toLocaleString('ar-LY')} د.ل
                 </span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setPrintInstallationInvoiceOpen(false)}>إلغاء</Button>
-              <Button onClick={printInstallationInvoice} className="bg-orange-600 hover:bg-orange-700">
+            <div className="flex justify-end gap-3 pt-4 border-t-2">
+              <Button variant="outline" onClick={() => setPrintInstallationInvoiceOpen(false)} className="px-6">إلغاء</Button>
+              <Button onClick={printInstallationInvoice} className="bg-orange-600 hover:bg-orange-700 px-6">
                 <Printer className="h-4 w-4 ml-2" />
                 طباعة فاتورة الطباعة والتركيب
               </Button>
